@@ -1,16 +1,8 @@
 from rest_framework import routers
-from django.urls import path, re_path, include
-from .views import (ClaseView, AnuncioView, EntregaView, PreguntaView, UserView)
+from .views import ImageViewSet, ConsolidatedViewSet
 
 router = routers.DefaultRouter()
-router.register('clase', ClaseView, 'clase') # ?
-router.register('entrega', EntregaView, 'entrega')
-router.register('anuncio', AnuncioView, 'anuncio')
-router.register('pregunta', PreguntaView, 'pregunta')
-router.register('user', UserView, 'user')
-
-
-urlpatterns = [
-]
+router.register('image', ImageViewSet, 'image') # ?
+router.register('consolidated', ConsolidatedViewSet, 'consolidated')
 
 urlpatterns = router.urls
