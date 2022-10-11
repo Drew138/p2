@@ -1,6 +1,8 @@
 import { File } from "../models/file";
-import { getBase } from "./helpers";
+import { getBase, postBase, patchBase, deleteBase } from "./helpers";
 
-const getFile = getBase<File>("api/v1/file/");
-
-export default getFile;
+const apiEndpoint = "api/v1/file/";
+export const getFile = getBase<File>(apiEndpoint);
+export const postFile = postBase<File>(apiEndpoint);
+export const patchFile = patchBase<File>(apiEndpoint);
+export const deleteFile = deleteBase(apiEndpoint);
