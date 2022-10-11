@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'djoser',
+    'storages',
 ]
 
 REST_FRAMEWORK = {
@@ -137,6 +138,12 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.0/howto/static-files/
 
+TEXTRACT_BUCKET = os.getenv('TEXTTRACT_BUCKET')
+
+TEXTRACT_DOCUMENT = os.getenv('TEXTTRACT_DOCUMENT')
+
+TEXTRACT_REGION = os.getenv('TEXTTRACT_REGION')
+
 STATIC_URL = 'static/'
 
 STATIC_ROOT = '/static/'
@@ -148,3 +155,11 @@ CORS_ALLOW_ALL_ORIGINS = True
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# # S3 Buckets Config
+# AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID', '')
+# AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY', '')
+# AWS_STORAGE_BUCKET_NAME = os.getenv('AWS_STORAGE_BUCKET_NAME', '')
+# AWS_S3_FILE_OVERWRITE = False
+# AWS_DEFAULT_ACL = None
+# DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+# STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'

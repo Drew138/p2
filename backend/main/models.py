@@ -1,6 +1,7 @@
 from django.db import models
 from django_extensions.db.models import TimeStampedModel
 from django.contrib.auth.models import User
+from .recognition import process_text_detection
 
 
 class Image(TimeStampedModel):
@@ -16,5 +17,3 @@ class Consolidated(TimeStampedModel):
 
     def generate_consolidated_report(self):
         pass
-
-
