@@ -4,10 +4,10 @@ import { ChakraProvider } from "@chakra-ui/react";
 import Home from "./containers/home";
 import LogIn from "./containers/login";
 import SignUp from "./containers/signup";
-import NotFound from "./containers/not-found";
 import ProtectedRoute from "./components/protected-route";
+import NotFound from "./containers/not-found";
 
-function App() {
+const App = () => {
   return (
     <ChakraProvider>
       <BrowserRouter>
@@ -30,6 +30,6 @@ function App() {
       </BrowserRouter>
     </ChakraProvider>
   );
-}
+};
 
 export default App;
