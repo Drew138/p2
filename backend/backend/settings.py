@@ -24,7 +24,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-l&&*--ghyie9#3%s2$d^v5h7@5)e1vlhz_9@fju4tb&k5-1j7&'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG', '').upper().startswith('T')
 
 ALLOWED_HOSTS = ['0.0.0.0', '127.0.0.1']
 
@@ -138,11 +138,6 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.0/howto/static-files/
 
-TEXTRACT_BUCKET = os.getenv('TEXTTRACT_BUCKET')
-
-TEXTRACT_DOCUMENT = os.getenv('TEXTTRACT_DOCUMENT')
-
-TEXTRACT_REGION = os.getenv('TEXTTRACT_REGION')
 
 STATIC_URL = 'static/'
 
@@ -156,10 +151,20 @@ CORS_ALLOW_ALL_ORIGINS = True
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # # S3 Buckets Config
-# AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID', '')
-# AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY', '')
-# AWS_STORAGE_BUCKET_NAME = os.getenv('AWS_STORAGE_BUCKET_NAME', '')
-# AWS_S3_FILE_OVERWRITE = False
-# AWS_DEFAULT_ACL = None
-# DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
-# STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID', '')
+
+AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY', '')
+
+AWS_STORAGE_BUCKET_NAME = os.getenv('AWS_STORAGE_BUCKET_NAME', '')
+
+AWS_TEXTRACT_BUCKET = os.getenv('AWS_TEXTRACT_BUCKET', '')
+
+AWS_TEXTRACT_REGION = os.getenv('AWS_TEXTRACT_REGION', '')
+
+AWS_S3_FILE_OVERWRITE = False
+
+AWS_DEFAULT_ACL = None
+
+DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+
+STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'

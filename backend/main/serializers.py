@@ -1,15 +1,14 @@
 from rest_framework import serializers
-from .models import Image, Consolidated
+from .models import File, Report
 
 
-class ImageSerializer(serializers.ModelSerializer):
+class FileSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Image
+        model = File
         fields = '__all__'
 
 
-class ConsolidatedSerializer(serializers.ModelSerializer):
+class ReportSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Consolidated
+        model = Report
         fields = '__all__'
-

@@ -1,24 +1,22 @@
 from rest_framework import viewsets
-from .models import Image, Consolidated
-from .serializers import ImageSerializer, ConsolidatedSerializer
+from .models import File, Report
+from .serializers import FileSerializer, ReportSerializer
 from django_filters.rest_framework import DjangoFilterBackend
 
 
-class ImageViewSet(viewsets.ModelViewSet):
+class FileViewSet(viewsets.ModelViewSet):
 
-    serializer_class = ImageSerializer
+    serializer_class = FileSerializer
     filter_backends = [DjangoFilterBackend]
 
-
     def get_queryset(self):
-        return Image.objects.all()
+        return File.objects.all()
 
-class ConsolidatedViewSet(viewsets.ModelViewSet):
 
-    serializer_class = ConsolidatedSerializer
+class ReportViewSet(viewsets.ModelViewSet):
+
+    serializer_class = ReportSerializer
     filter_backends = [DjangoFilterBackend]
 
-
     def get_queryset(self):
-        return Consolidated.objects.all()
-
+        return Report.objects.all()
