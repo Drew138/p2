@@ -1,7 +1,7 @@
 from django.db import models
 import io
-import cv2
-import numpy as np
+# import cv2
+# import numpy as np
 import os
 from django_extensions.db.models import TimeStampedModel
 from django.contrib.auth.models import User
@@ -52,45 +52,49 @@ class File(TimeStampedModel):
         pass
 
     def split_image(self):
-        img_path = self.get_image()
-        img = cv2.imread(img_path)
-        img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        (thresh, img_bin) = cv2.threshold(img_gray,
-                                          128, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
-        img_bin = cv2.bitwise_not(img_bin)
+        # img_path = self.get_image()
+        # img = cv2.imread(img_path)
+        # img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        # (thresh, img_bin) = cv2.threshold(img_gray,
+        #                                   128, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
+        # img_bin = cv2.bitwise_not(img_bin)
+        #
+        # kernel_length_v = (np.array(img_gray).shape[1])//120
+        # vertical_kernel = cv2.getStructuringElement(
+        #     cv2.MORPH_RECT, (1, kernel_length_v))
+        # im_temp1 = cv2.erode(img_bin, vertical_kernel, iterations=3)
+        # vertical_lines_img = cv2.dilate(
+        #     im_temp1, vertical_kernel, iterations=3)
+        #
+        # kernel_length_h = (np.array(img_gray).shape[1])//40
+        # horizontal_kernel = cv2.getStructuringElement(
+        #     cv2.MORPH_RECT, (kernel_length_h, 1))
+        # im_temp2 = cv2.erode(img_bin, horizontal_kernel, iterations=3)
+        # horizontal_lines_img = cv2.dilate(
+        #     im_temp2, horizontal_kernel, iterations=3)
+        #
+        # kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
+        # table_segment = cv2.addWeighted(
+        #     vertical_lines_img, 0.5, horizontal_lines_img, 0.5, 0.0)
+        # table_segment = cv2.erode(cv2.bitwise_not(
+        #     table_segment), kernel, iterations=2)
+        # _, table_segment = cv2.threshold(
+        #     table_segment, 0, 255, cv2.THRESH_OTSU)
+        #
+        # contours, _ = cv2.findContours(
+        #     table_segment, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        # count = 0
+        # for c in contours:
+        #     x, y, w, h = cv2.boundingRect(c)
+        #     # if (w > 40 and h > 10) and w > 3 * h:
+        #     count += 1
+        #     cropped = img[y:y + h, x:x + w]
+        #     is_success, buffer = cv2.imencode(".jpg", cropped)
+        #     yield io.BytesIO(buffer)
+        pass
 
-        kernel_length_v = (np.array(img_gray).shape[1])//120
-        vertical_kernel = cv2.getStructuringElement(
-            cv2.MORPH_RECT, (1, kernel_length_v))
-        im_temp1 = cv2.erode(img_bin, vertical_kernel, iterations=3)
-        vertical_lines_img = cv2.dilate(
-            im_temp1, vertical_kernel, iterations=3)
 
-        kernel_length_h = (np.array(img_gray).shape[1])//40
-        horizontal_kernel = cv2.getStructuringElement(
-            cv2.MORPH_RECT, (kernel_length_h, 1))
-        im_temp2 = cv2.erode(img_bin, horizontal_kernel, iterations=3)
-        horizontal_lines_img = cv2.dilate(
-            im_temp2, horizontal_kernel, iterations=3)
 
-        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
-        table_segment = cv2.addWeighted(
-            vertical_lines_img, 0.5, horizontal_lines_img, 0.5, 0.0)
-        table_segment = cv2.erode(cv2.bitwise_not(
-            table_segment), kernel, iterations=2)
-        _, table_segment = cv2.threshold(
-            table_segment, 0, 255, cv2.THRESH_OTSU)
-
-        contours, _ = cv2.findContours(
-            table_segment, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-        count = 0
-        for c in contours:
-            x, y, w, h = cv2.boundingRect(c)
-            # if (w > 40 and h > 10) and w > 3 * h:
-            count += 1
-            cropped = img[y:y + h, x:x + w]
-            is_success, buffer = cv2.imencode(".jpg", cropped)
-            yield io.BytesIO(buffer)
 
             # cv2.imwrite("./results/cropped/crop_" + str(count) +
             #             "__" + img_path.split('/')[-1], cropped)
