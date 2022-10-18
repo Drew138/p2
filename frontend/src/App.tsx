@@ -6,7 +6,9 @@ import LogIn from "./containers/login";
 import SignUp from "./containers/signup";
 import ProtectedRoute from "./components/protected-route";
 import NotFound from "./containers/not-found";
-
+//<ProtectedRoute>
+//<Home />
+//</ProtectedRoute>
 const App = () => {
   return (
     <ChakraProvider>
@@ -15,9 +17,7 @@ const App = () => {
           <Route
             path="/"
             element={
-              <ProtectedRoute>
-                <Home />
-              </ProtectedRoute>
+              <Home/>
             }
           />
           <Route path="auth">
