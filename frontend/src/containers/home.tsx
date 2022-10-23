@@ -2,12 +2,15 @@ import { Container, Stack, Flex, useColorModeValue } from "@chakra-ui/react";
 import AppTable from "../components/table";
 import { useNavigate } from "react-router-dom";
 import Blob from "../components/blob";
+import Footer from "../components/footer";
+import NavLink from "../components/navbar";
 
 const Home = () => {
   let navigate = useNavigate();
 
   return (
     <Container maxW={"7xl"}>
+      <NavLink/>
       <Stack
         align={"center"}
         spacing={{ base: 8, md: 6 }}
@@ -42,6 +45,7 @@ const Home = () => {
           />
         </Flex>
       </Stack>
+      <Footer/>
     </Container>
   );
 };

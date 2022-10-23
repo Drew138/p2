@@ -12,6 +12,7 @@ import {
   useColorModeValue,
   Link,
 } from "@chakra-ui/react";
+import Blob from "../components/blob";
 
 const SignUp = () => {
   return (
@@ -19,8 +20,17 @@ const SignUp = () => {
       minH={"100vh"}
       align={"center"}
       justify={"center"}
-      bg={useColorModeValue("purple.50", "purple.800")}
+      //bg={useColorModeValue("purple.50", "purple.800")}
     >
+      <Blob
+        w={"80%"}
+        h={"80%"}
+        position={"absolute"}
+        top={"5%"}
+        left={0}
+        zIndex={-1}
+        color={useColorModeValue("red.50", "red.400")}
+      />
       <Stack spacing={8} mx={"auto"} maxW={"lg"} py={12} px={6}>
         <Stack align={"center"}>
           <Heading fontSize={"4xl"} textAlign={"center"}>
