@@ -5,7 +5,11 @@ from .models import File, Report
 class FileSerializer(serializers.ModelSerializer):
     class Meta:
         model = File
-        fields = '__all__'
+        fields = [
+            'name',
+            'image',
+            'user',
+        ]
 
 
 class ReportSerializer(serializers.ModelSerializer):
