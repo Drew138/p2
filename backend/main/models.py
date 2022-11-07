@@ -7,31 +7,46 @@ from django_extensions.db.models import TimeStampedModel
 from django.contrib.auth.models import User
 import boto3
 from django.conf import settings
-import threading
-# https://docs.aws.amazon.com/textract/latest/dg/detecting-document-text.html
+from .managers import UserManager
+from django.contrib.auth.models import AbstractUser
+from background_task import background
+
+
+class User(TimeStampedModel, AbstractUser):
+    """Base class for a user"""
+
+    username = None
+    email = models.EmailField(unique=True)
+    objects = UserManager()
+
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['pk', 'first_name', 'last_name']
 
 
 class File(TimeStampedModel):
-    name = models.CharField(max_length=255)
     image = models.ImageField(upload_to='images')
     user = models.ForeignKey(User, null=False, on_delete=models.CASCADE)
-    transcript = models.FileField(upload_to='transcript')
+    transcript = models.FileField(upload_to='transcript', null=True)
 
     def save(self, *args, **kwargs):
         instance = super().save(*args, **kwargs)
-        threading.Thread(target=self.process_image, args=(self,)).start()
+        self.process_image_task(self.id)
         return instance
 
-    def process_image(self):
-        img = self.get_image()
+    @staticmethod
+    @background()
+    def process_image_task(file_id):
+        instance = File.objects.get(id=file_id)
+        img = instance.get_image()
         s3 = boto3.resource('s3')
         bucket = settings.AWS_TEXTRACT_BUCKET
-        for fragment, count in self.split_image(img):
+        for fragment, count in instance.split_image(img):
             fragment.seek(0)
-            output_name = f"{count}__{self.name}__.jpg"  # count + name + jpg
+            # count + name + jpg
+            output_name = f"{count}__{instance.modified}__.jpg"
             s3.Object(bucket, output_name).upload_fileobj(fragment)
             fragment.close()
-            text = self.process_text_detection(output_name)
+            text = instance.process_text_detection(output_name)
             txt_buffer = io.BytesIO(text.encode())
             txt_filename = f'{output_name.rstrip(".jpg")}.txt'
             s3.Object(bucket, txt_filename).upload_fileobj(txt_buffer)
@@ -135,11 +150,11 @@ class File(TimeStampedModel):
                 }
             })
         blocks = response['Blocks']
-        numbers = []
+        text = []
         for block in blocks:
             if 'Text' in block:
-                numbers.append(block['Text'])
-        return numbers[0] if numbers else ''
+                text.append(block['Text'])
+        return ' '.join(text)
 
 
 class Report(TimeStampedModel):

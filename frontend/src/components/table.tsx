@@ -7,61 +7,88 @@ import {
   Td,
   TableCaption,
   TableContainer,
-  Wrap,
   Button,
+  Flex,
 } from "@chakra-ui/react";
+import { ColumnDefinitionType } from "../models/table";
+import { nanoid } from "nanoid";
+import { EditIcon } from "@chakra-ui/icons";
+import AppDeleteModalFactory from "./delete-modal";
+import AppModifyModalFactory from "./modify-modal/modify-modal";
 
-const AppTable = ({
+type Props<T, K extends keyof T> = {
+  data: Array<T> | undefined;
+  columns: Array<ColumnDefinitionType<T, K>>;
+  caption: string;
+  entityName: string;
+  modifyFunction: (data: T, id: number) => void;
+  deleteFunction: (id: number) => void;
+};
+
+const AppTable = <T extends { pk: number }, K extends keyof T>({
+  data,
   columns,
-  actions,
-}: {
-  columns: string[];
-  actions: string[];
-}) => {
+  caption,
+  entityName,
+  modifyFunction,
+  deleteFunction,
+}: Props<T, K>) => {
   return (
     <TableContainer>
-      <Table variant="striped" colorScheme="purple">
-        <TableCaption>Archivos</TableCaption>
+      <Table>
+        <TableCaption>{caption}</TableCaption>
         <Thead>
           <Tr>
             {columns.map((column) => (
-              <Th key={column}>{column}</Th>
+              <Th key={nanoid()}>{column.header}</Th>
             ))}
+            <Th>Acciones</Th>
           </Tr>
         </Thead>
         <Tbody>
-          <Tr>
-            <Td>1 Oct 22</Td>
-            <Td>El archivo</Td>
-            <Td>
-              <Wrap spacing={1}>
-                {actions.map((action) => (
-                  <Button
-                    size={"md"}
-                    fontWeight={"normal"}
-                    fontSize={"md"}
-                    px={5}
-                    colorScheme={"purple"}
-                    bg={"purple.500"}
-                    _hover={{ bg: "purple.700" }}
-                    key={action}
-                  >
-                    {action}
-                  </Button>
-                ))}
-              </Wrap>
-            </Td>
-          </Tr>
-          <Tr>
-            <Td></Td>
-            <Td></Td>
-            <Td></Td>
-          </Tr>
-          <Tr>
-            <Td></Td>
-            <Td></Td>
-            <Td></Td>
-          </Tr>
+          {data?.map((entry) => (
+            <Tr key={nanoid()}>
+              {columns.map((column) => (
+                <Td key={nanoid()}>
+                  {column.isFile ? (
+                    <a
+                      href={String(entry[column.key])}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      <Button
+                        size={"md"}
+                        fontWeight={"normal"}
+                        fontSize={"md"}
+                        px={5}
+                        colorScheme={"purple"}
+                        bg={"purple.500"}
+                        _hover={{ bg: "purple.700" }}
+                      >
+                        Descargar
+                      </Button>
+                    </a>
+                  ) : (
+                    entry[column.key]
+                  )}
+                </Td>
+              ))}
+              <Td>
+                <Flex flex={1} justify="space-around" align="center">
+                  <AppModifyModalFactory
+                    modifyFunction={() => modifyFunction(entry, entry.pk)}
+                    entity={entry}
+                    entityName={entityName}
+                    fields={columns}
+                  />
+                  <AppDeleteModalFactory
+                    deleteFunction={() => deleteFunction(entry.pk)}
+                    entityName={entityName}
+                  />
+                </Flex>
+              </Td>
+            </Tr>
+          ))}
         </Tbody>
       </Table>
     </TableContainer>

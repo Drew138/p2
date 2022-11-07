@@ -1,7 +1,7 @@
 export interface File {
   pk: number;
-  name: string;
+  modified: string;
   image: string;
   user: number;
-  transcript: string;
+  transcript?: string;
 }

@@ -1,8 +1,9 @@
 import { Report } from "../models/report";
-import { getBase, postBase, patchBase, deleteBase } from "./helpers";
+import { getBase, postBase, patchBase, deleteBase, listBase } from "./helpers";
 
 const apiEndpoint = "api/v1/report/";
-export const getFile = getBase<Report>(apiEndpoint);
-export const postFile = postBase<Report>(apiEndpoint);
-export const patchFile = patchBase<Report>(apiEndpoint);
-export const deleteFile = deleteBase(apiEndpoint);
+export const getReport = getBase<Report>(apiEndpoint);
+export const listReport = listBase<Report>(apiEndpoint);
+export const postReport = postBase<Report>(apiEndpoint);
+export const patchReport = patchBase<Report>(apiEndpoint);
+export const deleteReport = deleteBase(apiEndpoint);

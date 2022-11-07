@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'djoser',
     'storages',
+    'background_task',
 ]
 
 REST_FRAMEWORK = {
@@ -126,6 +127,8 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
+
+AUTH_USER_MODEL = 'main.User'
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.0/topics/i18n/

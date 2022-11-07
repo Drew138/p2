@@ -1,6 +1,12 @@
-import React from "react";
-import { Box, Heading, Text, Button, useColorModeValue } from '@chakra-ui/react';
+import {
+  Box,
+  Heading,
+  Text,
+  Button,
+  useColorModeValue,
+} from "@chakra-ui/react";
 import Blob from "../components/blob";
+import { Link } from "react-router-dom";
 
 const NotFound = () => {
   return (
@@ -19,25 +25,29 @@ const NotFound = () => {
         as="h2"
         size="2xl"
         bgGradient="linear(to-r, purple.400, purple.600)"
-        backgroundClip="text">
+        backgroundClip="text"
+      >
         404
       </Heading>
       <Text fontSize="20px" mt={3} mb={2}>
         Página No Encontrada
       </Text>
-      <Text color={'gray.600'} mb={6}>
+      <Text color={"gray.600"} mb={6}>
         La página que estás buscando parece que no existe
       </Text>
-
-      <Button
-        colorScheme="purple"
-        bgGradient="linear(to-r, purple.400, purple.500, purple.600)"
-        color="white"
-        variant="solid">
-        Volver al Inicio
-      </Button>
+      <Link to="/">
+        <Button
+          colorScheme="purple"
+          bgGradient="linear(to-r, purple.400, purple.500, purple.600)"
+          color="white"
+          variant="solid"
+        >
+          Volver al Inicio
+        </Button>
+      </Link>
     </Box>
   );
-}
+};
 
 export default NotFound;
+
