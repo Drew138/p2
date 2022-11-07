@@ -1,10 +1,8 @@
-import { ReactNode } from 'react';
 import {
   Box,
   Flex,
   Avatar,
   HStack,
-  Link,
   IconButton,
   Button,
   Menu,
@@ -14,27 +12,24 @@ import {
   MenuDivider,
   useDisclosure,
   useColorModeValue,
-  Stack,
+  Wrap,
 } from '@chakra-ui/react';
-import { normalize } from 'path';
+import ReactLogo from '../assets/logo.svg';
+import Files from './modal-files';
 
-const Links = ['Algo 1', 'Algo 2', 'Algo 3'];
+const Logo = (props: any) => {
+  return (
+      <div className="App">
+          <img 
+            src={ReactLogo} 
+            alt="React Logo" 
+            width={"10%"}
+          />
+      </div>
+  );
+};
 
-const NavLink = ({ children }: { children: ReactNode }) => (
-  <Link
-    px={2}
-    py={1}
-    rounded={'md'}
-    _hover={{
-      textDecoration: 'none',
-      bg: useColorModeValue('purple.200', 'purple.700'),
-    }}
-    href={'#'}>
-    {children}
-  </Link>
-);
-
-export default function Simple() {
+export default function Navbar() {
   const { isOpen, onOpen, onClose } = useDisclosure();
 
   return (
@@ -48,50 +43,35 @@ export default function Simple() {
             onClick={isOpen ? onClose : onOpen}
           />
           <HStack spacing={8} alignItems={'center'}>
-            <Box>Logo</Box>
-            <HStack
-              as={'nav'}
-              spacing={4}
-              display={{ base: 'none', md: 'flex' }}>
-              {Links.map((link) => (
-                <NavLink key={link}>{link}</NavLink>
-              ))}
-            </HStack>
+            <Box><Logo /></Box>
           </HStack>
           <Flex alignItems={'center'}>
-            <Menu>
-              <MenuButton
-                as={Button}
-                rounded={'full'}
-                variant={'link'}
-                cursor={'pointer'}
-                minW={0}>
-                <Avatar
-                  size={'sm'}
-                  src={
-                    ''
-                  }
-                />
-              </MenuButton>
-              <MenuList>
-                <MenuItem>Mi Perfil</MenuItem>
-                <MenuItem>Link 2</MenuItem>
-                <MenuDivider />
-                <MenuItem>Cerrar Sesión</MenuItem>
-              </MenuList>
-            </Menu>
+            <Wrap spacing={10}>
+              <Files />
+              <Menu>
+                <MenuButton
+                  as={Button}
+                  rounded={'full'}
+                  variant={'link'}
+                  cursor={'pointer'}
+                  minW={0}>
+                  <Avatar
+                    size={'sm'}
+                    src={
+                      ''
+                    }
+                  />
+                </MenuButton>
+                <MenuList>
+                  <MenuItem>Mi Perfil</MenuItem>
+                  <MenuItem>Link 2</MenuItem>
+                  <MenuDivider />
+                  <MenuItem>Cerrar Sesión</MenuItem>
+                </MenuList>
+              </Menu>
+            </Wrap>
           </Flex>
         </Flex>
-
-        {isOpen ? (
-          <Box pb={4} display={{ md: 'none' }}>
-            <Stack as={'nav'} spacing={4}>
-              {Links.map((link) => (
-                <NavLink key={link}>{link}</NavLink>
-              ))}
-            </Stack>
-          </Box>
-        ) : null}
       </Box>
     </>
   );
