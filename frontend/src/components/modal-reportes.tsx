@@ -109,10 +109,10 @@ const CreateReportModal = () => {
           </ModalBody>
 
           <ModalFooter>
-            <Button colorScheme="purple" mr={3}>
-              Generar
+            <Button onClick={onClose} mr={3}>
+              Cancelar
             </Button>
-            <Button onClick={onClose}>Cancelar</Button>
+            <Button colorScheme="purple">Generar</Button>
           </ModalFooter>
         </ModalContent>
       </Modal>
