@@ -6,19 +6,19 @@ const columns: ColumnDefinitionType<Report, keyof Report>[] = [
     key: "name",
     header: "Nombre",
     isFile: false,
-    disabled: false
+    editDisabled: false
   },
   {
     key: "modified",
     header: "Fecha",
     isFile: false,
-    disabled: false
+    editDisabled: false
   },
   {
     key: "report",
     header: "Reporte",
     isFile: true,
-    disabled: false
+    editDisabled: false
   },
 ];
 export default columns;

@@ -9,16 +9,18 @@ import {
   ModalFooter,
   FormLabel,
   FormControl,
-  Input,
-  InputGroup,
   useDisclosure,
+  Container,
 } from "@chakra-ui/react";
 import { EditIcon } from "@chakra-ui/icons";
-import React from "react";
 import { ColumnDefinitionType } from "../../models/table";
+import FileInput from "../../components/file-input";
+import { useForm } from "react-hook-form";
+
+import TextInput from "../text-input";
 
 type Props<T, K extends keyof T> = {
-  modifyFunction: () => void;
+  modifyFunction: (data: object) => void;
   entityName: string;
   entity: T;
   fields: Array<ColumnDefinitionType<T, K>>;
@@ -29,51 +31,54 @@ const AppModifyModalFactory = <T, K extends keyof T>({
   fields,
   entity,
 }: Props<T, K>) => {
-  const { isOpen, onOpen, onClose } = useDisclosure();
-
-  const onSubmit = () => {
-    modifyFunction();
+  const onSubmit = (values: object) => {
+    console.log(values);
+    modifyFunction(values);
     onClose();
   };
+
+  const { handleSubmit, register } = useForm();
+
+  const { isOpen, onOpen, onClose } = useDisclosure();
 
   return (
     <>
       <EditIcon onClick={onOpen} />
-      <Modal blockScrollOnMount={false} isOpen={isOpen} onClose={onClose}>
+      <Modal isOpen={isOpen} onClose={onClose}>
         <ModalOverlay />
         <ModalContent>
           <ModalHeader>{`Editar ${entityName}`}</ModalHeader>
           <ModalCloseButton />
           <ModalBody>
-            <form>
-              {fields.map((field) => {
-                if (field.isFile) {
+            <Container>
+              <form onSubmit={handleSubmit(onSubmit)} id="data-form">
+                {fields.map((field, index) => {
                   return (
-                    <InputGroup>
-                      <input type={"file"} multiple={true} />
-                    </InputGroup>
+                    <FormControl key={index}>
+                      <FormLabel htmlFor={String(field.key)}>
+                        {field.header}
+                      </FormLabel>
+                      {field.isFile ? (
+                        <FileInput id={String(field.key)} register={register} />
+                      ) : (
+                        <TextInput
+                          field={field}
+                          register={register}
+                          initial={String(entity[field.key])}
+                        />
+                      )}
+                    </FormControl>
                   );
-                } else {
-                  return (
-                    <>
-                      <FormLabel>{field.header}</FormLabel>
-                      <Input
-                        placeholder={field.header}
-                        isDisabled={field.disabled}
-                        value={String(field.isFile ? "" : entity[field.key])}
-                      />
-                    </>
-                  );
-                }
-              })}
-            </form>
+                })}
+              </form>
+            </Container>
           </ModalBody>
           <ModalFooter>
-            <Button colorScheme="red" mr={3} onClick={onClose} type="submit">
-              Guardar
+            <Button onClick={onClose} mr={3}>
+              Cancelar
             </Button>
-            <Button variant="ghost" onClick={onClose}>
-              Cerrar
+            <Button colorScheme="purple" type="submit" form="data-form">
+              Guardar
             </Button>
           </ModalFooter>
         </ModalContent>

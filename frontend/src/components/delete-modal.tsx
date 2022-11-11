@@ -35,11 +35,11 @@ const AppDeleteModalFactory = ({ deleteFunction, entityName }: Props) => {
             </Text>
           </ModalBody>
           <ModalFooter>
-            <Button colorScheme="red" mr={3} onClick={onDelete}>
-              Borrar
-            </Button>
-            <Button variant="ghost" onClick={onClose}>
+            <Button variant="ghost" mr={3} onClick={onClose}>
               Cerrar
+            </Button>
+            <Button colorScheme="red" onClick={onDelete}>
+              Borrar
             </Button>
           </ModalFooter>
         </ModalContent>

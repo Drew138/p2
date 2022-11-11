@@ -15,26 +15,60 @@ import {
   Text,
   Heading,
   useDisclosure,
+  Flex,
+  useToast,
 } from "@chakra-ui/react";
 import { motion, useAnimation } from "framer-motion";
-import React from "react";
+import React, { useState } from "react";
+import { postFile } from "../../services/file";
 import { first, second, third } from "./css-props";
 import PreviewImage from "./preview-image";
+import { useNavigate } from "react-router-dom";
+import responseHandler from "../../hooks/response";
+import { useMutation, useQueryClient } from "react-query";
 
 const CreateFileModal = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
-
+  const [file, setFile] = useState<File | null>(null);
   const initialRef = React.useRef(null);
   const finalRef = React.useRef(null);
 
   const controls = useAnimation();
   const startAnimation = () => controls.start("hover");
   const stopAnimation = () => controls.stop();
+  const toast = useToast();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
-  // handleFile(e){
-  //     let file = e.target.files[0]
-  //     this.setState({file: file})
-  // }
+  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const tmp = e.target.files ? e.target.files[0] : null;
+    setFile(tmp);
+  };
+
+  const { mutate: createFile } = useMutation(
+    "create-file",
+    async () => {
+      const [_, error] = await postFile({ image: file });
+      const toastData = responseHandler(
+        "Archivo Creado Exitosamente",
+        error,
+        navigate
+      );
+      toast(toastData);
+    },
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries("files");
+      },
+    }
+  );
+
+  const onSubmit = async () => {
+    if (file) {
+      createFile();
+    }
+    onClose();
+  };
 
   return (
     <>
@@ -139,7 +173,7 @@ const CreateFileModal = () => {
                       accept="image/*"
                       onDragEnter={startAnimation}
                       onDragLeave={stopAnimation}
-                      //onChange={(e)=>this.handleFile(e)}
+                      onChange={(e) => handleFile(e)}
                     />
                   </Box>
                 </Box>
@@ -147,11 +181,16 @@ const CreateFileModal = () => {
             </Container>
           </ModalBody>
 
+          <Flex justify="center">
+            <Text>{file?.name}</Text>
+          </Flex>
           <ModalFooter>
-            <Button colorScheme="purple" mr={3}>
+            <Button mr={3} onClick={onClose}>
+              Cancelar
+            </Button>
+            <Button colorScheme="purple" onClick={onSubmit}>
               Subir
             </Button>
-            <Button onClick={onClose}>Cancelar</Button>
           </ModalFooter>
         </ModalContent>
       </Modal>

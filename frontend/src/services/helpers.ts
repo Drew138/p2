@@ -49,12 +49,14 @@ export const listBase = <T>(apiEndpoint: string) => {
 };
 
 export type PostBaseReturn<T> = [T?, 'error'?];
-export const postBase = <T>(apiEndpoint: string) => {
-  return async (data: T): Promise<PostBaseReturn<T>> => {
+export const postBase = <T extends object>(apiEndpoint: string) => {
+  return async (data: object): Promise<PostBaseReturn<T>> => {
     let url = `${process.env.REACT_APP_BASE_URL}${apiEndpoint}`;
+    const form = new FormData();
+    Object.entries(data).forEach(([k, v]) => form.append(k, v));
     const headers = headersFactory();
     try {
-      const response = await axios.post<T>(url, data, { headers });
+      const response = await axios.post<T>(url, form, { headers });
       return [response.data, undefined];
     } catch (error: any) {
       return [undefined, error];
@@ -64,11 +66,13 @@ export const postBase = <T>(apiEndpoint: string) => {
 
 export type PatchBaseReturn<T> = [T?, 'error'?];
 export const patchBase = <T>(apiEndpoint: string) => {
-  return async (data: T, id: number): Promise<PatchBaseReturn<T>> => {
+  return async (data: object, id: number): Promise<PatchBaseReturn<T>> => {
     let url = `${process.env.REACT_APP_BASE_URL}${apiEndpoint}${id}/`;
+    const form = new FormData();
+    Object.entries(data).forEach(([k, v]) => form.append(k, v));
     const headers = headersFactory();
     try {
-      const response = await axios.patch<T>(url, data, { headers });
+      const response = await axios.patch<T>(url, form, { headers });
       return [response.data, undefined];
     } catch (error: any) {
       return [undefined, error];

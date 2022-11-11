@@ -6,19 +6,19 @@ const columns: ColumnDefinitionType<File, keyof File>[] = [
     key: "modified",
     header: "Fecha",
     isFile: false,
-    disabled: true
+    editDisabled: true,
   },
   {
     key: "image",
     header: "Imagenes",
     isFile: true,
-    disabled: false
+    editDisabled: false,
   },
   {
     key: "transcript",
     header: "Transcripción",
     isFile: true,
-    disabled: false
+    editDisabled: false,
   },
 ];
 export default columns;

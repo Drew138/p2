@@ -11,7 +11,7 @@ import {
   useColorModeValue,
 } from "@chakra-ui/react";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import Blob from "../components/blob";
 import responseHandler from "../hooks/response";
 import { logIn } from "../services/auth";
@@ -23,6 +23,8 @@ const LogIn = () => {
   const [password, setPassword] = useState("");
   const toast = useToast();
   const navigate = useNavigate();
+  const red = useColorModeValue("red.50", "red.400");
+  const grey = useColorModeValue("white", "gray.700");
 
   const click = async () => {
     const [response, error] = await logIn(email, password);
@@ -38,6 +40,10 @@ const LogIn = () => {
     }
   };
 
+  if (localStorage.getItem("token")) {
+    return <Navigate to="/" />;
+  }
+
   return (
     <Flex minH="100vh" align="center" justify="center">
       <Blob
@@ -47,18 +53,13 @@ const LogIn = () => {
         top="5%"
         left={0}
         zIndex={-1}
-        color={useColorModeValue("red.50", "red.400")}
+        color={red}
       />
       <Stack spacing={8} mx="auto" maxW="lg" py={12} px={6}>
         <Stack align="center">
           <Heading fontSize="4xl">Ingresa a tu cuenta</Heading>
         </Stack>
-        <Box
-          rounded="lg"
-          bg={useColorModeValue("white", "gray.700")}
-          boxShadow="lg"
-          p={8}
-        >
+        <Box rounded="lg" bg={grey} boxShadow="lg" p={8}>
           <Stack spacing={4}>
             <FormControl id="email">
               <FormLabel>Correo electrónico</FormLabel>

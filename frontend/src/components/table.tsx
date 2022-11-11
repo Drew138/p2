@@ -12,7 +12,6 @@ import {
 } from "@chakra-ui/react";
 import { ColumnDefinitionType } from "../models/table";
 import { nanoid } from "nanoid";
-import { EditIcon } from "@chakra-ui/icons";
 import AppDeleteModalFactory from "./delete-modal";
 import AppModifyModalFactory from "./modify-modal/modify-modal";
 
@@ -21,7 +20,7 @@ type Props<T, K extends keyof T> = {
   columns: Array<ColumnDefinitionType<T, K>>;
   caption: string;
   entityName: string;
-  modifyFunction: (data: T, id: number) => void;
+  modifyFunction: (data: object, pk: number) => void;
   deleteFunction: (id: number) => void;
 };
 
@@ -46,8 +45,8 @@ const AppTable = <T extends { pk: number }, K extends keyof T>({
           </Tr>
         </Thead>
         <Tbody>
-          {data?.map((entry) => (
-            <Tr key={nanoid()}>
+          {data?.map((entry, index) => (
+            <Tr key={index}>
               {columns.map((column) => (
                 <Td key={nanoid()}>
                   {column.isFile ? (
@@ -57,13 +56,14 @@ const AppTable = <T extends { pk: number }, K extends keyof T>({
                       rel="noreferrer"
                     >
                       <Button
-                        size={"md"}
-                        fontWeight={"normal"}
-                        fontSize={"md"}
+                        size="md"
+                        fontWeight="normal"
+                        fontSize="md"
                         px={5}
-                        colorScheme={"purple"}
-                        bg={"purple.500"}
+                        colorScheme="purple"
+                        bg="purple.500"
                         _hover={{ bg: "purple.700" }}
+                        disabled={!Boolean(entry[column.key])}
                       >
                         Descargar
                       </Button>
@@ -76,7 +76,7 @@ const AppTable = <T extends { pk: number }, K extends keyof T>({
               <Td>
                 <Flex flex={1} justify="space-around" align="center">
                   <AppModifyModalFactory
-                    modifyFunction={() => modifyFunction(entry, entry.pk)}
+                    modifyFunction={(data) => modifyFunction(data, entry.pk)}
                     entity={entry}
                     entityName={entityName}
                     fields={columns}

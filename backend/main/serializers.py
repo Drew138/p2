@@ -15,7 +15,6 @@ class FileSerializer(serializers.ModelSerializer):
             'pk',
             'modified',
             'image',
-            'user',
             'transcript',
         ]
 

@@ -4,7 +4,6 @@ import io
 import cv2
 import numpy as np
 from django_extensions.db.models import TimeStampedModel
-from django.contrib.auth.models import User
 import boto3
 from django.conf import settings
 from .managers import UserManager
@@ -20,12 +19,11 @@ class User(TimeStampedModel, AbstractUser):
     objects = UserManager()
 
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['pk', 'first_name', 'last_name']
+    REQUIRED_FIELDS = ['first_name', 'last_name']
 
 
 class File(TimeStampedModel):
     image = models.ImageField(upload_to='images')
-    user = models.ForeignKey(User, null=False, on_delete=models.CASCADE)
     transcript = models.FileField(upload_to='transcript', null=True)
 
     def save(self, *args, **kwargs):

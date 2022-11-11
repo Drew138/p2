@@ -16,7 +16,7 @@ import Blob from "../components/blob";
 import { Link } from "react-router-dom";
 import { createUser } from "../services/auth";
 import { useToast } from "@chakra-ui/react";
-import { useNavigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import responseHandler from "../hooks/response";
 
 const SignUp = () => {
@@ -26,6 +26,9 @@ const SignUp = () => {
   const [password, setPassword] = useState("");
   const toast = useToast();
   const navigate = useNavigate();
+
+  const red = useColorModeValue("red.50", "red.400");
+  const white = useColorModeValue("white", "gray.700");
 
   const click = async () => {
     const [response, error] = await createUser(email, name, lastName, password);
@@ -39,13 +42,13 @@ const SignUp = () => {
       navigate("/auth/login");
     }
   };
+
+  if (localStorage.getItem("token")) {
+    return <Navigate to="/" />;
+  }
+
   return (
-    <Flex
-      minH="100vh"
-      align="center"
-      justify="center"
-      //bg={useColorModeValue("purple.50", "purple.800")}
-    >
+    <Flex minH="100vh" align="center" justify="center">
       <Blob
         w="80%"
         h="80%"
@@ -53,7 +56,7 @@ const SignUp = () => {
         top="5%"
         left="0"
         zIndex="-1"
-        color={useColorModeValue("red.50", "red.400")}
+        color={red}
       />
       <Stack spacing={8} mx="auto" maxW="lg" py={12} px={6}>
         <Stack align="center">
@@ -61,12 +64,7 @@ const SignUp = () => {
             Regístrate
           </Heading>
         </Stack>
-        <Box
-          rounded="lg"
-          bg={useColorModeValue("white", "gray.700")}
-          boxShadow="lg"
-          p={8}
-        >
+        <Box rounded="lg" bg={white} boxShadow="lg" p={8}>
           <Stack spacing={4}>
             <HStack>
               <Box>
