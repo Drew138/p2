@@ -8,7 +8,9 @@ import boto3
 from django.conf import settings
 from .managers import UserManager
 from django.contrib.auth.models import AbstractUser
+from django.core.files.base import ContentFile
 from background_task import background
+import os
 
 
 class User(TimeStampedModel, AbstractUser):
@@ -31,6 +33,36 @@ class File(TimeStampedModel):
         self.process_image_task(self.id)
         return instance
 
+    def format_file(self, transcripts):
+        HEADERS = 6
+        CONTENTS = 8
+
+        for i in range(len(transcripts)):
+            if 'fecha' in transcripts[i][1].lower():
+                transcripts = transcripts[i:]
+                break
+        
+        res = ""
+
+        res += ";".join([x[1] for x in transcripts[:HEADERS]])
+
+        for i in range(HEADERS, len(transcripts), CONTENTS):
+            res += "\n"
+            res += ";".join([x[1] for x in transcripts[i:i + CONTENTS]])
+        
+        return res
+
+    def create_file(self, output_name, transcripts):
+        print("Transcripts:", transcripts)
+
+        formatted_transcripts = self.format_file(transcripts)
+        print("Formatted:", formatted_transcripts)
+
+        file = ContentFile(formatted_transcripts)
+
+        # Save the file
+        self.transcript.save(output_name, file, save=True)
+
     @staticmethod
     @background()
     def process_image_task(file_id):
@@ -38,6 +70,7 @@ class File(TimeStampedModel):
         img = instance.get_image()
         s3 = boto3.resource('s3')
         bucket = settings.AWS_TEXTRACT_BUCKET
+        transcripts = []
         for fragment, count in instance.split_image(img):
             fragment.seek(0)
             # count + name + jpg
@@ -45,10 +78,14 @@ class File(TimeStampedModel):
             s3.Object(bucket, output_name).upload_fileobj(fragment)
             fragment.close()
             text = instance.process_text_detection(output_name)
+            transcripts.append((count, text.replace(" ", "")))
             txt_buffer = io.BytesIO(text.encode())
             txt_filename = f'{output_name.rstrip(".jpg")}.txt'
             s3.Object(bucket, txt_filename).upload_fileobj(txt_buffer)
         connection.close()
+
+        transcripts.sort()
+        instance.create_file(instance, output_name.rstrip(".jpg"), transcripts)
 
     def get_image(self):
         s3 = boto3.resource('s3')
