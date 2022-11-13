@@ -26,5 +26,8 @@ class ReportSerializer(serializers.ModelSerializer):
             'pk',
             'modified',
             'name',
-            'report',
+            'quimico_report',
+            'bio_y_cor_report',
+            'ord_y_rec_report',
+            'year',
         ]

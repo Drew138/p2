@@ -11,6 +11,10 @@ from django.contrib.auth.models import AbstractUser
 from django.core.files.base import ContentFile
 from background_task import background
 import os
+from  django.core.validators import MinValueValidator, MaxValueValidator
+import datetime
+import pandas as pd
+import io   
 
 
 class User(TimeStampedModel, AbstractUser):
@@ -44,7 +48,7 @@ class File(TimeStampedModel):
         
         res = ""
 
-        res += ";".join([x[1] for x in transcripts[:HEADERS]])
+        res += ";".join([x[1].upper() for x in transcripts[:HEADERS]])
 
         for i in range(HEADERS, len(transcripts), CONTENTS):
             res += "\n"
@@ -53,13 +57,8 @@ class File(TimeStampedModel):
         return res
 
     def create_file(self, output_name, transcripts):
-        print("Transcripts:", transcripts)
-
         formatted_transcripts = self.format_file(transcripts)
-        print("Formatted:", formatted_transcripts)
-
         file = ContentFile(formatted_transcripts)
-
         # Save the file
         self.transcript.save(output_name, file, save=True)
 
@@ -78,7 +77,13 @@ class File(TimeStampedModel):
             s3.Object(bucket, output_name).upload_fileobj(fragment)
             fragment.close()
             text = instance.process_text_detection(output_name)
-            transcripts.append((count, text.replace(" ", "")))
+            
+            # Transcript
+            trans_text = text.replace(" ", "")
+            trans_text = trans_text.replace(";", "")
+            transcripts.append((count, trans_text))
+            
+            # Continue
             txt_buffer = io.BytesIO(text.encode())
             txt_filename = f'{output_name.rstrip(".jpg")}.txt'
             s3.Object(bucket, txt_filename).upload_fileobj(txt_buffer)
@@ -194,7 +199,153 @@ class File(TimeStampedModel):
 
 class Report(TimeStampedModel):
     name = models.CharField(max_length=255)
-    report = models.FileField(upload_to='report')
+    quimico_report = models.FileField(upload_to='report')
+    bio_y_cor_report = models.FileField(upload_to='report')
+    ord_y_rec_report = models.FileField(upload_to='report')
+    year = models.IntegerField(validators=[MinValueValidator(2015), MaxValueValidator(datetime.datetime.now().year)])
+
+    def save(self, *args, **kwargs):
+        instance = super().save(*args, **kwargs)
+        self.generate_consolidated_report()
+        return instance
+    
+    def merge_transcripts(self, transcripts):
+        HEADERS = transcripts[0].split('\n')[0]
+        HEADERS = HEADERS.split(';')[1:]
+        HEADERS = ['DIA', 'MES', 'AÑO'] + HEADERS
+        HEADERS = ";".join(HEADERS)
+        
+        for i in range(len(transcripts)):
+            cleaned = transcripts[i].split('\n')[1:]
+            transcripts[i] = '\n'.join(cleaned)
+        
+        merged_transcript = HEADERS + '\n' + '\n'.join(transcripts)
+        
+        return merged_transcript
+    
+    def get_transcripts(self):
+        transcripts = File.objects.filter(date__year=self.year)
+        transcripts = transcripts.order_by('creation_time')
+        transcripts = transcripts.values_list('transcript', flat=True)
+        
+        return self.merge_transcripts(transcripts)
+    
+    def generate_ByC(self, df):
+        HEADERS = ['DIA', 'MES', 'TIPO DE RESIDUO', 'CANTIDAD (Kg)', 'PRETRATRAMIENTO', 'TRATAMIENTO O DISPOSICIÓN FINAL', 'COLOR DE BOLSA']
+        BODY = ""
+        last_month = -1
+        tot_bio, tot_corto = 0, 0
+        
+        for i in range(len(df)):
+            dia, mes, biologico, cortopunzante = df.iloc[i]['DIA'], df.iloc[i]['MES'], float(df.iloc[i]['BIOLOGICO']), float(df.iloc[i]['CORTOPUNZANTE'])
+            
+            if last_month != mes:
+                # Add values
+                BODY += f"Biosanitarios:;{tot_bio};;Cortopunzantes:;{tot_corto};;;\n"
+                BODY += f";;;;;;;\n"
+                BODY += f"MES:;{mes};;;;;;\n"
+                
+                # Set variables
+                last_month = mes
+                tot_bio, tot_corto = 0, 0
+            # Add values
+            tot_bio += biologico
+            tot_corto += cortopunzante
+            
+            # Create rows
+            line1 = f"{dia};{mes};Biosanitario;{biologico};ZANIT-10;Incineración;Rojo\n"
+            line2 = f";;Cortopunzante;{cortopunzante};;Incineración;Guardián\n"
+            BODY += line1 + line2
+        
+        data = ";".join(HEADERS) + '\n' + BODY
+        
+        file = ContentFile(data)
+        output_name = f"{datetime.datetime.now()}-BIOLOGICO_Y_CORTOPUNZANTE.csv"
+        self.bio_y_cor_report.save(output_name, file, save=True)
+    
+    def generate_OyR(self, df):
+        HEADERS = ['DIA', 'MES', 'TIPO DE RESIDUO','SALA DE ESPERA Kg', 'ASISTENCIAL','PRETRATRAMIENTO', 'TRATAMIENTO O DISPOSICIÓN FINAL', 'COLOR DE BOLSA']
+        BODY = ""
+        last_month = -1
+        tot_ord, tot_rec = 0, 0
+        
+        for i in range(len(df)):
+            dia, mes, ordinario, reciclable = df.iloc[i]['DIA'], df.iloc[i]['MES'], float(df.iloc[i]['VERDE']), float(df.iloc[i]['GRIS'])
+            
+            if last_month != mes:
+                # Add values
+                BODY += f"Ordinarios:;{tot_ord};;Reciclables:;{tot_rec};;;\n"
+                BODY += f";;;;;;;\n"
+                BODY += f"MES:;{mes};;;;;;\n"
+                
+                # Set variables
+                last_month = mes
+                tot_ord, tot_rec = 0, 0
+            # Add values
+            tot_ord += ordinario
+            tot_rec += reciclable
+            
+            # Create rows
+            line1 = f"{dia};{mes};Ordinarios;{ordinario};;Ninguno;;Verde\n"
+            line2 = f";;Reciclables;{reciclable};;Ninguno;;Gris\n"
+            BODY += line1 + line2
+        
+        data = ";".join(HEADERS) + '\n' + BODY
+        self.save_file('ORDINARIO_Y_RECICLABLE', data)
+        
+        file = ContentFile(data)
+        output_name = f"{datetime.datetime.now()}-ORDINARIO_Y_RECICLABLE.csv"
+        self.ord_y_rec_report.save(output_name, file, save=True)
+    
+    def generate_quimico(self, df):
+        HEADERS = ['DIA', 'MES', 'TIPO DE RESIDUO','CANTIDAD (Kg)','PRETRATRAMIENTO', 'TRATAMIENTO O DISPOSICIÓN FINAL', 'COLOR DE BOLSA']
+        BODY = ""
+        last_month = -1
+        total = 0
+        
+        
+        BODY += f";;RESIDUOS AMALGAMA;;GLICERINA;Incineración;Rojo\n"
+        BODY += f";;REVELADOR;;;Incineración;Guardián\n"
+        BODY += f";;FIJADOR;;;Incineración;Rojo\n"
+        
+        for i in range(len(df)):
+            dia, mes, quimico = df.iloc[i]['DIA'], df.iloc[i]['MES'], float(df.iloc[i]['QUIMICO'])
+            
+            if last_month != mes:
+                # Add values
+                BODY += f"TOTAL:;{total};;;;;;\n"
+                BODY += f";;;;;;;\n"
+                BODY += f"MES:;{mes};;;;;;\n"
+                
+                # Set variables
+                last_month = mes
+                total = 0
+            # Add values
+            total += quimico
+            
+            # Create rows
+            line1 = f"{dia};{mes};RESIDUOS QUIMICOS;{quimico};;Incineración;Rojo\n"
+            BODY += line1
+        
+        data = ";".join(HEADERS) + '\n' + BODY
+        self.save_file('RIESGO_QUIMICO', data)
+        
+        file = ContentFile(data)
+        output_name = f"{datetime.datetime.now()}-RIESGO_QUIMICO.csv"
+        self.quimico_report.save(output_name, file, save=True)
 
     def generate_consolidated_report(self):
-        pass
+        transcripts = self.get_transcripts()
+        
+        transcripts_df = pd.read_csv(io.StringIO(transcripts), sep=";")
+        
+        fecha = ['DIA', 'MES', 'AÑO']
+        ByC_df = transcripts_df[[*fecha, 'BIOLOGICO', 'CORTOPUNZANTE']].copy()
+        OyR_df = transcripts_df[[*fecha, 'VERDE', 'GRIS']].copy()
+        quimico_df = transcripts_df[[*fecha, 'QUIMICO']].copy()
+        
+        self.generate_ByC(ByC_df)
+        self.generate_OyR(OyR_df)
+        self.generate_quimico(quimico_df)
+
+        
