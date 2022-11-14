@@ -20,7 +20,7 @@ import { useForm } from "react-hook-form";
 import TextInput from "../text-input";
 
 type Props<T, K extends keyof T> = {
-  modifyFunction: (data: object) => void;
+  modifyFunction: (data: { [key: string]: any }) => void;
   entityName: string;
   entity: T;
   fields: Array<ColumnDefinitionType<T, K>>;

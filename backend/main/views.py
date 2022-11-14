@@ -10,7 +10,7 @@ class FileViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend]
 
     def get_queryset(self):
-        return File.objects.all()
+        return File.objects.order_by('pk')
 
 
 class ReportViewSet(viewsets.ModelViewSet):
@@ -19,4 +19,4 @@ class ReportViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend]
 
     def get_queryset(self):
-        return Report.objects.all()
+        return Report.objects.order_by('pk')

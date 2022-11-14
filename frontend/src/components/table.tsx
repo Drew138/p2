@@ -20,7 +20,7 @@ type Props<T, K extends keyof T> = {
   columns: Array<ColumnDefinitionType<T, K>>;
   caption: string;
   entityName: string;
-  modifyFunction: (data: object, pk: number) => void;
+  modifyFunction: (data: { [key: string]: any }, pk: number) => void;
   deleteFunction: (id: number) => void;
 };
 

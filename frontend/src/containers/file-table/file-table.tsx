@@ -29,7 +29,7 @@ const FileTable = () => {
   const removeFile = async (id: number) => {
     const [_, error] = await deleteFile(id);
     const toastData = responseHandler(
-      "File Deleted Successfully",
+      "Archivo Borrado Exitosamente",
       error,
       navigate
     );
@@ -37,15 +37,24 @@ const FileTable = () => {
     invalidateQuery();
   };
 
-  const modifyFunction = async (data: object, pk: number) => {
+  const modifyFunction = async (
+    data: { [key: string]: string | FileList },
+    pk: number
+  ) => {
+    delete data["modified"];
+    const payload: { [key: string]: any } = {};
     Object.entries(data).forEach(([key, value]) => {
-      // if (!value) {
-      //   delete data[key];
-      // }
+      if (!value) {
+        delete data[key];
+      } else if (value instanceof FileList && value.length > 0) {
+        payload[key] = value[0];
+      } else {
+        payload[key] = value;
+      }
     });
-    const [_, error] = await patchFile(data, pk);
+    const [_, error] = await patchFile(payload, pk);
     const toastData = responseHandler(
-      "File Modified Successfully",
+      "Archivo Modificado Exitosamente",
       error,
       navigate
     );

@@ -4,32 +4,28 @@ import {
   Icon,
   InputLeftElement,
   Input,
+  Box,
 } from "@chakra-ui/react";
 import { AddIcon } from "@chakra-ui/icons";
 
 const FileInput = ({ id, register }: { id: string; register: any }) => {
-  let inputRef: any;
   return (
     <InputGroup>
-      <InputLeftElement />
-      <Input
-        id={id}
-        type="file"
-        hidden
-        {...register(id)}
-        ref={(input) => {
-          inputRef = input;
-        }}
-      />
-      <Button
-        leftIcon={<Icon as={AddIcon} />}
-        width="100%"
-        onClick={() => {
-          inputRef.click();
+      <label
+        htmlFor={id}
+        style={{
+          border: "1px solid #ccc",
+          borderRadius: "5px",
+          display: "inline-block",
+          padding: "6px 12px",
+          cursor: "pointer",
+          width: "100%",
         }}
       >
+        {<AddIcon ml={3} mr={3} />}
         Subir
-      </Button>
+      </label>
+      <Input id={id} hidden type="file" {...register(id)} />
     </InputGroup>
   );
 };

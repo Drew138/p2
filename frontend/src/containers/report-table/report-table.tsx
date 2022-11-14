@@ -27,8 +27,24 @@ const ReportTable = () => {
     queryClient.invalidateQueries("reports");
   };
 
-  const modifyFunction = async (data: object, pk: number) => {
-    const [_, error] = await patchReport(data, pk);
+  const modifyFunction = async (
+    data: { [key: string]: string | FileList },
+    pk: number
+  ) => {
+    delete data["modified"];
+
+    const payload: { [key: string]: any } = {};
+    Object.entries(data).forEach(([key, value]) => {
+      if (!value) {
+        delete data[key];
+      } else if (value instanceof FileList && value.length > 0) {
+        payload[key] = value[0];
+      } else {
+        payload[key] = value;
+      }
+    });
+
+    const [_, error] = await patchReport(payload, pk);
     const toastData = responseHandler(
       "Reporte Modificado Exitosamente",
       error,

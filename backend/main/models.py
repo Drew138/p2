@@ -29,8 +29,10 @@ class File(TimeStampedModel):
     transcript = models.FileField(upload_to='transcript', null=True)
 
     def save(self, *args, **kwargs):
+        is_create = self.pk is None
         instance = super().save(*args, **kwargs)
-        self.process_image_task(self.id)
+        if is_create:
+            self.process_image_task(self.id)
         return instance
 
     def format_file(self, transcripts):
