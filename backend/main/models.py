@@ -200,7 +200,7 @@ class File(TimeStampedModel):
 
 
 class Report(TimeStampedModel):
-    name = models.CharField(max_length=255)
+    name = models.CharField(max_length=255, blank=True, null=True)
     quimico_report = models.FileField(upload_to='report')
     bio_y_cor_report = models.FileField(upload_to='report')
     ord_y_rec_report = models.FileField(upload_to='report')

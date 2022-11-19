@@ -4,8 +4,8 @@ import columns from "./column-definition";
 import { useToast, Stack } from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
 import { deleteReport, listReport, patchReport } from "../../services/report";
-import { useQuery, useMutation, useQueryClient } from "react-query";
-import CreateReportModal from "../../components/modal-reportes";
+import { useQuery, useQueryClient } from "react-query";
+import CreateReportModal from "../../components/create-report-modal";
 
 const ReportTable = () => {
   const toast = useToast();
