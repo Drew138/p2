@@ -60,9 +60,20 @@ class File(TimeStampedModel):
 
     def create_file(self, output_name, transcripts):
         formatted_transcripts = self.format_file(transcripts)
-        file = ContentFile(formatted_transcripts)
+        file = ContentFile(formatted_transcripts.encode('utf-8'))
+        
+        print("FILE: ", file, flush=True)
         # Save the file
-        self.transcript.save(output_name, file, save=True)
+        bucket = settings.AWS_STORAGE_BUCKET_NAME
+        region = settings.AWS_TEXTRACT_REGION
+        
+        s3 = boto3.resource('s3')
+        s3.Object(bucket, output_name).upload_fileobj(file)
+        
+        url = f"https://{bucket}.s3.{region}.amazonaws.com/{output_name}"
+        
+        self.transcript = url
+        self.save()
 
     @staticmethod
     @background()
@@ -74,6 +85,7 @@ class File(TimeStampedModel):
         s3 = boto3.resource('s3')
         bucket = settings.AWS_TEXTRACT_BUCKET
         transcripts = []
+        file_output_name = f'transcript__{instance.modified}'
         for fragment, count in instance.split_image(img):
             fragment.seek(0)
             # count + name + jpg
@@ -92,9 +104,10 @@ class File(TimeStampedModel):
             txt_filename = f'{output_name.rstrip(".jpg")}.txt'
             s3.Object(bucket, txt_filename).upload_fileobj(txt_buffer)
         connection.close()
-
+        
         transcripts.sort()
-        instance.create_file(instance, output_name.rstrip(".jpg"), transcripts)
+        
+        instance.create_file(file_output_name, transcripts)
 
     def get_image(self):
         s3 = boto3.resource('s3')
@@ -227,11 +240,16 @@ class Report(TimeStampedModel):
         return merged_transcript
     
     def get_transcripts(self):
-        transcripts = File.objects.filter(date__year=self.year)
-        transcripts = transcripts.order_by('creation_time')
+        transcripts = File.objects.filter(created__year=self.year)
+        transcripts = transcripts.order_by('created')
         transcripts = transcripts.values_list('transcript', flat=True)
         
-        return self.merge_transcripts(transcripts)
+        if transcripts:
+            transcripts = self.merge_transcripts(transcripts)
+        else:
+            transcripts = ''
+        
+        return transcripts
     
     def generate_ByC(self, df):
         HEADERS = ['DIA', 'MES', 'TIPO DE RESIDUO', 'CANTIDAD (Kg)', 'PRETRATRAMIENTO', 'TRATAMIENTO O DISPOSICIÓN FINAL', 'COLOR DE BOLSA']
@@ -338,21 +356,22 @@ class Report(TimeStampedModel):
         self.quimico_report.save(output_name, file, save=True)
 
     @staticmethod
-    @background()
+    #@background()
     def generate_consolidated_report(report_id):
         report = Report.objects.filter(id=report_id).first()
         if not report:
             return
         transcripts = report.get_transcripts()
         
-        transcripts_df = pd.read_csv(io.StringIO(transcripts), sep=";")
-        
-        fecha = ['DIA', 'MES', 'AÑO']
-        ByC_df = transcripts_df[[*fecha, 'BIOLOGICO', 'CORTOPUNZANTE']].copy()
-        OyR_df = transcripts_df[[*fecha, 'VERDE', 'GRIS']].copy()
-        quimico_df = transcripts_df[[*fecha, 'QUIMICO']].copy()
-        
-        report.generate_ByC(ByC_df)
-        report.generate_OyR(OyR_df)
-        report.generate_quimico(quimico_df)
+        if transcripts:
+            transcripts_df = pd.read_csv(io.StringIO(transcripts), sep=";")
+            
+            fecha = ['DIA', 'MES', 'AÑO']
+            ByC_df = transcripts_df[[*fecha, 'BIOLOGICO', 'CORTOPUNZANTE']].copy()
+            OyR_df = transcripts_df[[*fecha, 'VERDE', 'GRIS']].copy()
+            quimico_df = transcripts_df[[*fecha, 'QUIMICO']].copy()
+            
+            report.generate_ByC(ByC_df)
+            report.generate_OyR(OyR_df)
+            report.generate_quimico(quimico_df)
 
