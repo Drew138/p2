@@ -43,7 +43,7 @@ const CreateReportModal = () => {
     },
     {
       onSuccess: () => {
-        queryClient.invalidateQueries("report");
+        queryClient.invalidateQueries("reports");
       },
     }
   );

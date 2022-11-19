@@ -42,7 +42,6 @@ class ReportSerializer(serializers.ModelSerializer):
         model = Report
         fields = [
             'pk',
-            'name',
             'quimico_report',
             'bio_y_cor_report',
             'ord_y_rec_report',

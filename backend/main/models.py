@@ -67,7 +67,9 @@ class File(TimeStampedModel):
     @staticmethod
     @background()
     def process_image_task(file_id):
-        instance = File.objects.get(id=file_id)
+        instance = File.objects.filter(id=file_id).first()
+        if not instance:
+            return
         img = instance.get_image()
         s3 = boto3.resource('s3')
         bucket = settings.AWS_TEXTRACT_BUCKET
@@ -200,7 +202,6 @@ class File(TimeStampedModel):
 
 
 class Report(TimeStampedModel):
-    name = models.CharField(max_length=255, blank=True, null=True)
     quimico_report = models.FileField(upload_to='report')
     bio_y_cor_report = models.FileField(upload_to='report')
     ord_y_rec_report = models.FileField(upload_to='report')
@@ -208,7 +209,7 @@ class Report(TimeStampedModel):
 
     def save(self, *args, **kwargs):
         instance = super().save(*args, **kwargs)
-        self.generate_consolidated_report()
+        self.generate_consolidated_report(self.id)
         return instance
     
     def merge_transcripts(self, transcripts):
@@ -336,8 +337,13 @@ class Report(TimeStampedModel):
         output_name = f"{datetime.datetime.now()}-RIESGO_QUIMICO.csv"
         self.quimico_report.save(output_name, file, save=True)
 
-    def generate_consolidated_report(self):
-        transcripts = self.get_transcripts()
+    @staticmethod
+    @background()
+    def generate_consolidated_report(report_id):
+        report = Report.objects.filter(id=report_id).first()
+        if not report:
+            return
+        transcripts = report.get_transcripts()
         
         transcripts_df = pd.read_csv(io.StringIO(transcripts), sep=";")
         
@@ -346,8 +352,7 @@ class Report(TimeStampedModel):
         OyR_df = transcripts_df[[*fecha, 'VERDE', 'GRIS']].copy()
         quimico_df = transcripts_df[[*fecha, 'QUIMICO']].copy()
         
-        self.generate_ByC(ByC_df)
-        self.generate_OyR(OyR_df)
-        self.generate_quimico(quimico_df)
+        report.generate_ByC(ByC_df)
+        report.generate_OyR(OyR_df)
+        report.generate_quimico(quimico_df)
 
-        

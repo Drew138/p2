@@ -3,12 +3,6 @@ import { Report } from "../../models/report";
 
 const columns: ColumnDefinitionType<Report, keyof Report>[] = [
   {
-    key: "name",
-    header: "Nombre",
-    isFile: false,
-    editDisabled: false
-  },
-  {
     key: "year",
     header: "Año",
     isFile: false,
