@@ -2,6 +2,7 @@ from rest_framework import serializers
 from .models import File, Report
 
 
+
 class FileSerializer(serializers.ModelSerializer):
     transcript = serializers.ReadOnlyField(
         source='file.transcript',

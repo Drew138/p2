@@ -15,6 +15,8 @@ from  django.core.validators import MinValueValidator, MaxValueValidator
 import datetime
 import pandas as pd
 import io   
+from  django.core.files.uploadedfile import InMemoryUploadedFile
+from rest_framework import serializers
 
 
 class User(TimeStampedModel, AbstractUser):
@@ -26,6 +28,7 @@ class User(TimeStampedModel, AbstractUser):
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['first_name', 'last_name']
+
 
 
 class File(TimeStampedModel):
@@ -59,21 +62,45 @@ class File(TimeStampedModel):
         return res
 
     def create_file(self, output_name, transcripts):
+        class AuxSerializer(serializers.ModelSerializer):
+            class Meta:
+                model = File
+                fields = [
+                    'pk',
+                    'modified',
+                    'image',
+                    'transcript',
+                ]
+        
         formatted_transcripts = self.format_file(transcripts)
+        
         file = ContentFile(formatted_transcripts.encode('utf-8'))
         
-        print("FILE: ", file, flush=True)
-        # Save the file
-        bucket = settings.AWS_STORAGE_BUCKET_NAME
-        region = settings.AWS_TEXTRACT_REGION
+        file.seek(0, os.SEEK_END)
+        size = file.tell()
+        file.seek(0, os.SEEK_SET)
         
-        s3 = boto3.resource('s3')
-        s3.Object(bucket, output_name).upload_fileobj(file)
+        memory_file = InMemoryUploadedFile(file, '', 'transcript', 'application/zip', size, 'utf8')
         
-        url = f"https://{bucket}.s3.{region}.amazonaws.com/{output_name}"
+        # print("FILE: ", file, flush=True)
+        # # Save the file
+        # bucket = settings.AWS_STORAGE_BUCKET_NAME
+        # region = settings.AWS_TEXTRACT_REGION
         
-        self.transcript = url
-        self.save()
+        # s3 = boto3.resource('s3')
+        # s3.Object(bucket, output_name).upload_fileobj(memory_file)
+        
+        # url = f"https://{bucket}.s3.{region}.amazonaws.com/\"{output_name}\""
+        
+        # self.transcript = url
+        # self.save()
+        
+        serializer = AuxSerializer(self, data={'transcript': memory_file}, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+        
+        
+
 
     @staticmethod
     @background()
