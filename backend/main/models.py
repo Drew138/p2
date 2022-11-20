@@ -80,27 +80,11 @@ class File(TimeStampedModel):
         size = file.tell()
         file.seek(0, os.SEEK_SET)
         
-        memory_file = InMemoryUploadedFile(file, '', 'transcript', 'application/zip', size, 'utf8')
-        
-        # print("FILE: ", file, flush=True)
-        # # Save the file
-        # bucket = settings.AWS_STORAGE_BUCKET_NAME
-        # region = settings.AWS_TEXTRACT_REGION
-        
-        # s3 = boto3.resource('s3')
-        # s3.Object(bucket, output_name).upload_fileobj(memory_file)
-        
-        # url = f"https://{bucket}.s3.{region}.amazonaws.com/\"{output_name}\""
-        
-        # self.transcript = url
-        # self.save()
-        
+        memory_file = InMemoryUploadedFile(file, '', 'transcript', 'text/plain', size, 'utf8')
         serializer = AuxSerializer(self, data={'transcript': memory_file}, partial=True)
         if serializer.is_valid():
             serializer.save()
         
-        
-
 
     @staticmethod
     @background()
