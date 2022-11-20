@@ -19,6 +19,7 @@ from  django.core.files.uploadedfile import InMemoryUploadedFile
 from rest_framework import serializers
 
 
+
 class User(TimeStampedModel, AbstractUser):
     """Base class for a user"""
 
@@ -34,10 +35,11 @@ class User(TimeStampedModel, AbstractUser):
 class File(TimeStampedModel):
     image = models.ImageField(upload_to='images')
     transcript = models.FileField(upload_to='transcript', null=True)
-
+    
     def save(self, *args, **kwargs):
         is_create = self.pk is None
         instance = super().save(*args, **kwargs)
+
         if is_create:
             self.process_image_task(self.id)
         return instance
@@ -222,167 +224,98 @@ class File(TimeStampedModel):
         for block in blocks:
             if 'Text' in block:
                 text.append(block['Text'])
-        return ' '.join(text)
+        return text[0] if text else ''
 
 
 class Report(TimeStampedModel):
-    quimico_report = models.FileField(upload_to='report')
-    bio_y_cor_report = models.FileField(upload_to='report')
-    ord_y_rec_report = models.FileField(upload_to='report')
+    report = models.FileField(upload_to='report', null=True)
     year = models.IntegerField(validators=[MinValueValidator(2015), MaxValueValidator(datetime.datetime.now().year)])
 
     def save(self, *args, **kwargs):
+        is_create = self.pk is None
         instance = super().save(*args, **kwargs)
-        self.generate_consolidated_report(self.id)
+        
+        if is_create:
+            self.generate_consolidated_report(self.id)
         return instance
+        
     
-    def merge_transcripts(self, transcripts):
-        HEADERS = transcripts[0].split('\n')[0]
-        HEADERS = HEADERS.split(';')[1:]
-        HEADERS = ['DIA', 'MES', 'AÑO'] + HEADERS
-        HEADERS = ";".join(HEADERS)
+    def merge(self, transcripts):
+        HEADERS = ['DIA', 'MES', 'AÑO', 'VERDE','GRIS','QUIMICO','BIOLOGICO','CORTOPUNZANTE']
+        merged = ''
         
-        for i in range(len(transcripts)):
-            cleaned = transcripts[i].split('\n')[1:]
-            transcripts[i] = '\n'.join(cleaned)
+        for i, t in enumerate(transcripts):
+            sep = t.split('\n')
+            sep = sep[1:]
+            joined = '\n'.join(sep)
+            if i < len(transcripts)-1:
+                joined += '\nCambio de pagina;;;;;;;'
+            merged += joined
         
-        merged_transcript = HEADERS + '\n' + '\n'.join(transcripts)
-        
-        return merged_transcript
+        result = ';'.join(HEADERS) + '\n' + merged
+        return result
+    
+    def download_transcript(self, url):
+        region = settings.AWS_TEXTRACT_REGION
+        bucket = settings.AWS_STORAGE_BUCKET_NAME
+        s3 = boto3.resource('s3', region_name=region)
+        bucket = s3.Bucket(bucket)
+        object = bucket.Object(url)
+
+        file_stream = io.BytesIO()
+        object.download_fileobj(file_stream)
+        return file_stream.getvalue().decode('utf-8')
     
     def get_transcripts(self):
-        transcripts = File.objects.filter(created__year=self.year)
-        transcripts = transcripts.order_by('created')
-        transcripts = transcripts.values_list('transcript', flat=True)
+        files = File.objects.filter(created__year=self.year)
+        files = files.order_by('created')
+        urls = files.values_list('transcript', flat=True)
+        urls = [url for url in urls if url]
         
-        if transcripts:
-            transcripts = self.merge_transcripts(transcripts)
-        else:
-            transcripts = ''
-        
+        transcripts = []         
+        for url in urls:
+            transcripts.append(self.download_transcript(url))
+            
         return transcripts
-    
-    def generate_ByC(self, df):
-        HEADERS = ['DIA', 'MES', 'TIPO DE RESIDUO', 'CANTIDAD (Kg)', 'PRETRATRAMIENTO', 'TRATAMIENTO O DISPOSICIÓN FINAL', 'COLOR DE BOLSA']
-        BODY = ""
-        last_month = -1
-        tot_bio, tot_corto = 0, 0
-        
-        for i in range(len(df)):
-            dia, mes, biologico, cortopunzante = df.iloc[i]['DIA'], df.iloc[i]['MES'], float(df.iloc[i]['BIOLOGICO']), float(df.iloc[i]['CORTOPUNZANTE'])
-            
-            if last_month != mes:
-                # Add values
-                BODY += f"Biosanitarios:;{tot_bio};;Cortopunzantes:;{tot_corto};;;\n"
-                BODY += f";;;;;;;\n"
-                BODY += f"MES:;{mes};;;;;;\n"
-                
-                # Set variables
-                last_month = mes
-                tot_bio, tot_corto = 0, 0
-            # Add values
-            tot_bio += biologico
-            tot_corto += cortopunzante
-            
-            # Create rows
-            line1 = f"{dia};{mes};Biosanitario;{biologico};ZANIT-10;Incineración;Rojo\n"
-            line2 = f";;Cortopunzante;{cortopunzante};;Incineración;Guardián\n"
-            BODY += line1 + line2
-        
-        data = ";".join(HEADERS) + '\n' + BODY
-        
-        file = ContentFile(data)
-        output_name = f"{datetime.datetime.now()}-BIOLOGICO_Y_CORTOPUNZANTE.csv"
-        self.bio_y_cor_report.save(output_name, file, save=True)
-    
-    def generate_OyR(self, df):
-        HEADERS = ['DIA', 'MES', 'TIPO DE RESIDUO','SALA DE ESPERA Kg', 'ASISTENCIAL','PRETRATRAMIENTO', 'TRATAMIENTO O DISPOSICIÓN FINAL', 'COLOR DE BOLSA']
-        BODY = ""
-        last_month = -1
-        tot_ord, tot_rec = 0, 0
-        
-        for i in range(len(df)):
-            dia, mes, ordinario, reciclable = df.iloc[i]['DIA'], df.iloc[i]['MES'], float(df.iloc[i]['VERDE']), float(df.iloc[i]['GRIS'])
-            
-            if last_month != mes:
-                # Add values
-                BODY += f"Ordinarios:;{tot_ord};;Reciclables:;{tot_rec};;;\n"
-                BODY += f";;;;;;;\n"
-                BODY += f"MES:;{mes};;;;;;\n"
-                
-                # Set variables
-                last_month = mes
-                tot_ord, tot_rec = 0, 0
-            # Add values
-            tot_ord += ordinario
-            tot_rec += reciclable
-            
-            # Create rows
-            line1 = f"{dia};{mes};Ordinarios;{ordinario};;Ninguno;;Verde\n"
-            line2 = f";;Reciclables;{reciclable};;Ninguno;;Gris\n"
-            BODY += line1 + line2
-        
-        data = ";".join(HEADERS) + '\n' + BODY
-        self.save_file('ORDINARIO_Y_RECICLABLE', data)
-        
-        file = ContentFile(data)
-        output_name = f"{datetime.datetime.now()}-ORDINARIO_Y_RECICLABLE.csv"
-        self.ord_y_rec_report.save(output_name, file, save=True)
-    
-    def generate_quimico(self, df):
-        HEADERS = ['DIA', 'MES', 'TIPO DE RESIDUO','CANTIDAD (Kg)','PRETRATRAMIENTO', 'TRATAMIENTO O DISPOSICIÓN FINAL', 'COLOR DE BOLSA']
-        BODY = ""
-        last_month = -1
-        total = 0
-        
-        
-        BODY += f";;RESIDUOS AMALGAMA;;GLICERINA;Incineración;Rojo\n"
-        BODY += f";;REVELADOR;;;Incineración;Guardián\n"
-        BODY += f";;FIJADOR;;;Incineración;Rojo\n"
-        
-        for i in range(len(df)):
-            dia, mes, quimico = df.iloc[i]['DIA'], df.iloc[i]['MES'], float(df.iloc[i]['QUIMICO'])
-            
-            if last_month != mes:
-                # Add values
-                BODY += f"TOTAL:;{total};;;;;;\n"
-                BODY += f";;;;;;;\n"
-                BODY += f"MES:;{mes};;;;;;\n"
-                
-                # Set variables
-                last_month = mes
-                total = 0
-            # Add values
-            total += quimico
-            
-            # Create rows
-            line1 = f"{dia};{mes};RESIDUOS QUIMICOS;{quimico};;Incineración;Rojo\n"
-            BODY += line1
-        
-        data = ";".join(HEADERS) + '\n' + BODY
-        self.save_file('RIESGO_QUIMICO', data)
-        
-        file = ContentFile(data)
-        output_name = f"{datetime.datetime.now()}-RIESGO_QUIMICO.csv"
-        self.quimico_report.save(output_name, file, save=True)
 
+    def create_file(self, output_name, data):
+        class AuxSerializer(serializers.ModelSerializer):
+            class Meta:
+                model = Report
+                fields = [
+                    'pk',
+                    'modified',
+                    'report',
+                    'year',
+                ]
+        
+        
+        data.seek(0)
+        file = ContentFile(data.read())
+        
+        file.seek(0, os.SEEK_END)
+        size = file.tell()
+        file.seek(0, os.SEEK_SET)
+        
+        memory_file = InMemoryUploadedFile(file, '', 'report', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', size, 'utf8')
+        serializer = AuxSerializer(self, data={'report': memory_file}, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            print('saved', flush=True)
+    
     @staticmethod
-    #@background()
+    @background()
     def generate_consolidated_report(report_id):
         report = Report.objects.filter(id=report_id).first()
         if not report:
             return
+        print('Starting report generation', report.pk, flush=True)
         transcripts = report.get_transcripts()
-        
+        merged = report.merge(transcripts)
         if transcripts:
-            transcripts_df = pd.read_csv(io.StringIO(transcripts), sep=";")
-            
-            fecha = ['DIA', 'MES', 'AÑO']
-            ByC_df = transcripts_df[[*fecha, 'BIOLOGICO', 'CORTOPUNZANTE']].copy()
-            OyR_df = transcripts_df[[*fecha, 'VERDE', 'GRIS']].copy()
-            quimico_df = transcripts_df[[*fecha, 'QUIMICO']].copy()
-            
-            report.generate_ByC(ByC_df)
-            report.generate_OyR(OyR_df)
-            report.generate_quimico(quimico_df)
-
+            transcripts_df = pd.read_csv(io.StringIO(merged), sep=";")
+            buffer = io.BytesIO()           
+            transcripts_df.to_excel(buffer)
+            print('Report generated', flush=True)
+            report.create_file('report.xlsx', buffer)
+ 
