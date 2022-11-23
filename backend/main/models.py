@@ -116,7 +116,7 @@ class File(TimeStampedModel):
             txt_buffer = io.BytesIO(text.encode())
             txt_filename = f'{output_name.rstrip(".jpg")}.txt'
             s3.Object(bucket, txt_filename).upload_fileobj(txt_buffer)
-        connection.close()
+        # connection.close()
         
         transcripts.sort()
         
@@ -247,9 +247,9 @@ class Report(TimeStampedModel):
         for i, t in enumerate(transcripts):
             sep = t.split('\n')
             sep = sep[1:]
-            joined = '\n'.join(sep)
+            joined = '\n'.join(sep) + '\n'
             if i < len(transcripts)-1:
-                joined += '\nCambio de pagina;;;;;;;'
+                joined += '\nCambio de pagina;;;;;;;\n'
             merged += joined
         
         result = ';'.join(HEADERS) + '\n' + merged
